@@ -1,32 +1,23 @@
+// src/firebase/firestoreService.ts
+import { db } from "./firebaseConfig";
 import {
   collection,
   getDocs,
-  onSnapshot,
-  addDoc,
   query,
-  where
+  orderBy,
+  where,
+  DocumentData,
 } from "firebase/firestore";
-import { db } from "./firebaseConfig";
 
-// Fetch total users count
-export const fetchTotalUsers = async () => {
-  const snapshot = await getDocs(collection(db, "users"));
-  return snapshot.size;
+export const fetchCollection = async (colName: string): Promise<DocumentData[]> => {
+  const colRef = collection(db, colName);
+  const snapshot = await getDocs(colRef);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
-// Real-time users count
-export const watchTotalUsers = (cb: (count: number) => void) =>
-  onSnapshot(collection(db, "users"), (snap) => cb(snap.size));
-
-// Similarly, for other collections:
-export const watchCollection = (name: string, cb: (docs: any[]) => void) =>
-  onSnapshot(collection(db, name), (snap) =>
-    cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-  );
-
-// Example: fetch pending requests
-export const fetchPendingRequests = async () => {
-  const q = query(collection(db, "requests"), where("status", "==", "pending"));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export const fetchUserHistory = async (userId: string) => {
+  const colRef = collection(db, "history");
+  const q = query(colRef, where("userId", "==", userId), orderBy("date", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
